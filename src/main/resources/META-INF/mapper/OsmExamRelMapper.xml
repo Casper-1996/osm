@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmExamRelDao">
+
+    <sql id="All_Column_List">
+     REL_ID, EXAM_ID, QUESTION_ID, OPTION_ID, ANSWER_ID, QUESTION_TYPE, QUESTION_SEQ
+ </sql>
+
+    <sql id="selectRelation">
+        <if test="relId != null and relId != ''">
+            and REL_ID = #{relId}
+        </if>
+        <if test="examId != null and examId != ''">
+            and EXAM_ID = #{examId}
+        </if>
+        <if test="questionId != null and questionId != ''">
+            and QUESTION_ID = #{questionId}
+        </if>
+        <if test="optionId != null and optionId != ''">
+            and OPTION_ID = #{optionId}
+        </if>
+        <if test="answerId != null and answerId != ''">
+            and ANSWER_ID = #{answerId}
+        </if>
+        <if test="questionType != null">
+            and QUESTION_TYPE = #{questionType}
+        </if>
+        <if test="questionSeq != null">
+            and QUESTION_SEQ = #{questionSeq}
+        </if>
+    </sql>
+
+    <select id="getRightAnswer" resultType="java.lang.String">
+        select ANSWER_ID from OSM_EXAM_REL where REL_ID = #{relId}
+    </select>
+
+    <select id="selectByIdCount" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM "OSM_EXAM_REL" WHERE QUESTION_ID = #{id}
+    </select>
+
+
+</mapper>

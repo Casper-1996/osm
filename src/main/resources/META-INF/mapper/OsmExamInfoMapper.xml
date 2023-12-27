@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmExamInfoDao">
+
+    <sql id="All_Column_List">
+     EXAM_ID, USER_ID, START_TIME, END_TIME, OBJECT_SCORE, SUBJECT_SCORE
+ </sql>
+
+    <sql id="selectRelation">
+        <if test="examId != null and examId != ''">
+            and EXAM_ID = #{examId}
+        </if>
+        <if test="userId != null and userId != ''">
+            and USER_ID = #{userId}
+        </if>
+        <if test="startTime != null">
+            and START_TIME = #{startTime}
+        </if>
+        <if test="endTime != null">
+            and END_TIME = #{endTime}
+        </if>
+        <if test="objectScore != null">
+            and OBJECT_SCORE = #{objectScore}
+        </if>
+        <if test="subjectScore != null">
+            and SUBJECT_SCORE = #{subjectScore}
+        </if>
+    </sql>
+
+    <update id="modifyEndTime">
+      update OSM_EXAM_INFO a set a.END_TIME=sysdate where EXAM_ID = #{examId} and USER_ID = #{userId}
+    </update>
+
+    <update id="modifyObjectScore">
+        update OSM_EXAM_INFO a
+        set a.OBJECT_SCORE=(select sum(SCORE) from OSM_EXAM_DETAIL
+            where EXAM_ID = #{examId} and USER_ID = #{userId} and QUESTION_TYPE in (1,2,3))
+        where EXAM_ID = #{examId} and USER_ID = #{userId}
+    </update>
+
+
+</mapper>

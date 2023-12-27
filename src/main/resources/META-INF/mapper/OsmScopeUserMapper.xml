@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmScopeUserDao">
+
+    <sql id="All_Column_List">
+     BANK_RECORD_ID, SCOPE_USER
+ </sql>
+
+    <sql id="selectRelation">
+        <if test="bankRecordId != null and bankRecordId != ''">
+            and BANK_RECORD_ID = #{bankRecordId}
+        </if>
+        <if test="scopeUser != null and scopeUser != ''">
+            and SCOPE_USER = #{scopeUser}
+        </if>
+    </sql>
+    <update id="removeOld">
+        delete
+        from OSM_SCOPE_USER
+        where BANK_RECORD_ID = #{bankRecordId} and SCOPE_USER = #{scopeUser}
+    </update>
+
+    <select id="selectScopeUser" resultType="com.icbc.exam.entity.po.OsmScopeUserModel">
+        select
+        <include refid="All_Column_List"/>
+        from OSM_SCOPE_USER
+        where BANK_RECORD_ID = #{bankRecordId}
+    </select>
+    <select id="selectBybankRecordId" resultType="java.lang.String">
+        SELECT
+        SCOPE_USER
+        FROM OSM_SCOPE_USER
+        WHERE BANK_RECORD_ID = #{bankRecordId}
+    </select>
+
+
+</mapper>

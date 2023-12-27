@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmMultipleChoiceDao">
+
+    <sql id="All_Column_List">
+     ID, PRIMARY_ID, OPTIONS, CORRECT_ANSWER
+ </sql>
+
+    <sql id="selectRelation">
+        <if test="id != null and id != ''">
+            and ID = #{id}
+        </if>
+        <if test="primaryId != null and primaryId != ''">
+            and PRIMARY_ID = #{primaryId}
+        </if>
+        <if test="options != null and options != ''">
+            and OPTIONS = #{options}
+        </if>
+        <if test="correctAnswer != null">
+            and CORRECT_ANSWER = #{correctAnswer}
+        </if>
+    </sql>
+    <delete id="removeByPrimaryId">
+        DELETE
+        FROM OSM_MULTIPLE_CHOICE
+        WHERE PRIMARY_ID = #{primaryId}
+    </delete>
+
+    <select id="selectByPrimaryId" resultType="com.icbc.exam.entity.po.OsmMultipleChoiceModel">
+        SELECT <include refid="All_Column_List"/>
+        FROM OSM_MULTIPLE_CHOICE
+        WHERE PRIMARY_ID = #{primaryId}
+    </select>
+    <select id="selectByIdCount" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM OSM_MULTIPLE_CHOICE
+        WHERE PRIMARY_ID = #{primaryId}
+    </select>
+
+
+</mapper>

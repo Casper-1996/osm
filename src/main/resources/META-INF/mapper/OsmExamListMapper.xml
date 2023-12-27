@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmExamListDao">
+
+ <sql id="All_Column_List">
+     EXAM_ID, EXAM_NAME, SCOPE_USER, SCOPE_APPLIACTION, EXAM_START_DATE, EXAM_END_DATE, EXAM_DURATION, CREATE_TIME, UPDATE_TIME,EXAM_CONFIG,EXAM_STATE,MODULE_TYPE_SCALE
+ </sql>
+       
+ <sql id="selectRelation">
+            <if test="examId != null and examId != ''">
+                and EXAM_ID = #{examId}
+            </if>
+            <if test="examName != null and examName != ''">
+                and EXAM_NAME = #{examName}
+            </if>
+            <if test="scopeUser != null">
+                and SCOPE_USER = #{scopeUser}
+            </if>
+            <if test="scopeAppliaction != null">
+                and SCOPE_APPLIACTION = #{scopeAppliaction}
+            </if>
+            <if test="examStartDate != null and examStartDate != ''">
+                and EXAM_START_DATE = #{examStartDate}
+            </if>
+            <if test="examEndDate != null and examEndDate != ''">
+                and EXAM_END_DATE = #{examEndDate}
+            </if>
+            <if test="examDuration != null and examDuration != ''">
+                and EXAM_DURATION = #{examDuration}
+            </if>
+            <if test="createTime != null">
+                and CREATE_TIME = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and UPDATE_TIME = #{updateTime}
+            </if>
+         <if test="examConfig != null and examConfig != ''">
+             and EXAM_CONFIG = #{examConfig}
+         </if>
+     <if test="examState != null and examState != ''">
+         and EXAM_STATE = #{examState}
+     </if>
+     <if test="moduleTypeScale != null and moduleTypeScale != ''">
+         and MODULE_TYPE_SCALE = #{moduleTypeScale}
+     </if>
+
+
+ </sql>
+    <delete id="deleteExamQuesTion">
+        delete from OSM.OSM_EXAM_REL where EXAM_ID = #{examId}
+    </delete>
+    <select id="qryModuleQues" resultType="com.icbc.exam.entity.bo.PaperQuestion">
+        select ID id,TITLE_CONTENT titleContent,UPLOAD_FILE_NAME uploadFileName,CORRECT_ANSWER correctAnswer from (
+        SELECT
+        DISTINCT q.ID disId,q.*
+        FROM
+        OSM.OSM_QUESTION_BANK_RECORD q,
+        OSM.OSM_SCOPE_USER s
+        WHERE
+        q.ID = s.BANK_RECORD_ID
+        AND q.QUESTION_TYPE = #{questionType}
+        <if test="scopeAppliaction != null">
+            AND q.SCOPE_APPLIACTION = #{scopeAppliaction}
+        </if>
+        <if test="scopeUser != null">
+            AND s.SCOPE_USER = #{scopeUser}
+        </if>
+        AND q.MODULE_TYPE = #{moduleType}
+        ORDER BY
+        DBMS_RANDOM.RANDOM
+        ) t where <![CDATA[ ROWNUM <= #{questionNum}  ]]>
+    </select>
+    <select id="findQuesOption" resultType="com.icbc.exam.entity.bo.QuesOptions">
+        select ID optionId,OPTIONS optionContent,CORRECT_ANSWER correctAnswer from OSM.OSM_MULTIPLE_CHOICE where PRIMARY_ID = #{primaryId}
+    </select>
+    <select id="findSubQues" resultType="com.icbc.exam.entity.bo.PaperQuestion">
+        select ID id,TITLE_CONTENT titleContent,UPLOAD_FILE_NAME uploadFileName,CORRECT_ANSWER correctAnswer,REFERENCE_ANSWER referenceAnswer  from (
+        SELECT
+        DISTINCT q.ID disId,q.*
+        FROM
+        OSM.OSM_QUESTION_BANK_RECORD q,
+        OSM.OSM_SCOPE_USER s
+        WHERE
+        q.ID = s.BANK_RECORD_ID
+        AND q.QUESTION_TYPE = '0'
+        <if test="scopeAppliaction != null">
+            AND q.SCOPE_APPLIACTION = #{scopeAppliaction}
+        </if>
+        <if test="scopeUser != null">
+            AND s.SCOPE_USER = #{scopeUser}
+        </if>
+        ORDER BY
+        DBMS_RANDOM.RANDOM
+        ) t where <![CDATA[ ROWNUM <= #{questionNum}  ]]>
+    </select>
+    <select id="findQuesSeq" resultType="java.lang.String">
+       select DICT_KEY dictkey from OSM.T_SYS_DICT where DICT_TYPE = #{code} ORDER BY SEQ asc
+    </select>
+    <select id="findExamDate" resultType="java.lang.Integer">
+            SELECT
+        COUNT(1)
+    FROM
+        OSM.OSM_EXAM_LIST
+    WHERE
+        TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN EXAM_START_DATE
+        AND EXAM_END_DATE
+        AND EXAM_ID = #{examId}
+    </select>
+    <select id="qryExamList" resultType="com.icbc.exam.entity.vo.ExamManageListResp">
+        SELECT
+        s.EXAM_ID examId,
+        s.EXAM_NAME examName,
+        s.SCOPE_USER scopeUser,
+        s.SCOPE_APPLIACTION scopeAppliaction,
+        s.EXAM_DURATION examDuration,
+        s.EXAM_START_DATE examStartDate,
+        s.EXAM_END_DATE examEndDate,
+        l.examNum,
+        CASE
+
+        WHEN TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN s.EXAM_START_DATE
+        AND s.EXAM_END_DATE THEN
+        '2'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) < s.EXAM_START_DATE  ]]> THEN
+        '1'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > s.EXAM_END_DATE  ]]>
+        AND s.EXAM_STATE = '3' THEN
+        '3'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > s.EXAM_END_DATE  ]]>
+        AND s.EXAM_STATE = '4' THEN
+        '4'
+        ELSE '5'
+        END AS examStatue
+        FROM
+        (
+        SELECT
+        el.EXAM_ID,
+        COUNT( ei.EXAM_ID ) examNum
+        FROM
+        (
+        SELECT
+        EXAM_ID,
+        EXAM_START_DATE,
+        EXAM_END_DATE
+        FROM
+        OSM.OSM_EXAM_LIST
+        WHERE 1=1
+        <if test="examName!=null and examName!=''">
+            AND EXAM_NAME like '%${examName}%'
+        </if>
+        <if test="scopeUser != null">
+            and SCOPE_USER = #{scopeUser}
+        </if>
+        <if test="scopeAppliaction != null">
+            and SCOPE_APPLIACTION = #{scopeAppliaction}
+        </if>
+        <if test="examStartDate!=null and examStartDate!=''">
+            AND <![CDATA[ EXAM_START_DATE >= #{examStartDate} ]]>
+        </if>
+        <if test="examEndDate!=null and examEndDate!=''">
+            AND <![CDATA[ EXAM_END_DATE <= #{examEndDate} ]]>
+        </if>
+
+        <if test="examStatue != null and examStatue != '' and examStatue == '2'.toString()">
+            AND TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN EXAM_START_DATE
+            AND EXAM_END_DATE
+        </if>
+        <if test="examStatue != null and examStatue != '' and examStatue == '3'.toString()">
+            AND <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > EXAM_END_DATE  ]]>
+            AND EXAM_STATE = '3'
+        </if>
+        <if test="examStatue != null and examStatue != '' and examStatue == '4'.toString()">
+            AND <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > EXAM_END_DATE  ]]>
+            AND EXAM_STATE = '4'
+        </if>
+        <if test="examStatue != null and examStatue != '' and examStatue == '5'.toString()">
+            AND <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > EXAM_END_DATE  ]]>
+            AND EXAM_STATE = '5'
+        </if>
+        <if test="examStatue != null and examStatue != '' and examStatue == '1'.toString()">
+            AND <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) < EXAM_START_DATE  ]]>
+        </if>
+        ) el
+        LEFT JOIN OSM.OSM_EXAM_INFO ei ON el.EXAM_ID = ei.EXAM_ID
+        GROUP BY
+        el.EXAM_ID
+        ) l,
+        OSM.OSM_EXAM_LIST s
+        WHERE
+        l.EXAM_ID = s.EXAM_ID
+    </select>
+    <select id="findExamState" resultType="java.lang.Integer">
+        select
+        CASE
+        WHEN TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN s.EXAM_START_DATE
+        AND s.EXAM_END_DATE THEN
+        '2'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) < s.EXAM_START_DATE  ]]> THEN
+        '1'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > s.EXAM_END_DATE  ]]>
+        AND s.EXAM_STATE = '3' THEN
+        '3'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > s.EXAM_END_DATE  ]]>
+        AND s.EXAM_STATE = '4' THEN
+        '4'
+        ELSE '5'
+        END AS examState
+        from  OSM.OSM_EXAM_LIST s where s.EXAM_ID = #{examId}
+    </select>
+    <select id="selectPreviewExam" resultType="com.icbc.exam.entity.bo.ExamPreviewInfo">
+       select s.*,
+        CASE
+        WHEN TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN s.EXAM_START_DATE
+        AND s.EXAM_END_DATE THEN
+        '2'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) < s.EXAM_START_DATE  ]]> THEN
+        '1'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > s.EXAM_END_DATE  ]]>
+        AND s.EXAM_STATE = '3' THEN
+        '3'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > s.EXAM_END_DATE  ]]>
+        AND s.EXAM_STATE = '4' THEN
+        '4'
+        ELSE '5'
+        END AS examStatue
+        from  OSM.OSM_EXAM_LIST s where EXAM_ID = #{examId}
+    </select>
+    <select id="qryMyExamList" resultType="com.icbc.exam.entity.vo.MyExamManageListResp">
+
+        SELECT
+        e.EXAM_ID examId,
+        e.EXAM_NAME examName,
+        e.EXAM_START_DATE examStartDate,
+        e.EXAM_END_DATE examEndDate,
+        e.EXAM_DURATION examDuration,
+        ROUND( TO_NUMBER( i.END_TIME - i.START_TIME ) * 24 * 60 ) examUseTime,
+        i.OBJECT_SCORE objectScore,
+        i.SUBJECT_SCORE subjectScore,
+        ( i.OBJECT_SCORE + i.SUBJECT_SCORE ) totalScore,
+        CASE
+
+        WHEN TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN e.EXAM_START_DATE
+        AND e.EXAM_END_DATE
+        AND i.END_TIME IS NULL THEN
+        '2'
+        WHEN TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN e.EXAM_START_DATE
+        AND e.EXAM_END_DATE
+        AND i.END_TIME IS NOT NULL THEN
+        '3'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > e.EXAM_END_DATE  ]]>
+        AND i.END_TIME IS NOT NULL THEN
+        '3'
+        WHEN <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) < e.EXAM_START_DATE  ]]> THEN
+        '1' ELSE '4'
+        END AS examState
+        FROM
+        OSM.OSM_EXAM_LIST e
+        LEFT JOIN OSM.OSM_EXAM_INFO i ON e.EXAM_ID = i.EXAM_ID
+        <if test="userId!=null and userId!=''">
+            AND i.USER_ID =  #{userId}
+        </if>
+        <if test="examName!=null and examName!=''">
+            AND e.EXAM_NAME like '%${examName}%'
+        </if>
+        <if test="examStartDate!=null and examStartDate!=''">
+            AND <![CDATA[ e.EXAM_START_DATE >= #{examStartDate} ]]>
+        </if>
+        <if test="examEndDate!=null and examEndDate!=''">
+            AND <![CDATA[ e.EXAM_END_DATE <= #{examEndDate} ]]>
+        </if>
+        <if test="examState != null and examState != '' and examState == '2'.toString()">
+            AND TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN e.EXAM_START_DATE
+            AND e.EXAM_END_DATE
+            AND i.END_TIME IS NULL
+        </if>
+        <if test="examState != null and examState != '' and examState == '3'.toString()">
+            AND TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) BETWEEN e.EXAM_START_DATE
+            AND e.EXAM_END_DATE
+            AND i.END_TIME IS NOT NULL or
+            <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > e.EXAM_END_DATE  ]]>
+            AND i.END_TIME IS NOT NULL
+        </if>
+        <if test="examState != null and examState != '' and examState == '1'.toString()">
+            AND <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) < e.EXAM_START_DATE  ]]>
+        </if>
+        <if test="examState != null and examState != '' and examState == '4'.toString()">
+            AND <![CDATA[ TO_CHAR( #{nowDate}, 'yyyy-mm-dd HH24:MI:SS' ) > e.EXAM_END_DATE  ]]>
+            AND i.END_TIME IS NULL
+        </if>
+
+    </select>
+    <select id="findExamPaperAllQues" resultType="com.icbc.exam.entity.po.OsmExamRelModel">
+        select * from OSM.OSM_EXAM_REL where EXAM_ID = #{examId} order by QUESTION_SEQ asc
+    </select>
+    <select id="findjudAdmin" resultType="com.icbc.exam.entity.vo.JudAdminResp">
+
+	SELECT
+		a.USERNAME userId,
+		a.NAME,
+		o.NAME orgName,
+		o.ID orgId
+	FROM
+		OSM.T_ROLE r,
+		OSM.T_ADMIN_ROLE ar,
+		OSM.T_ADMIN a,
+		OSM.T_ORGANIZATION o
+	WHERE
+		r.ID = ar.ROLE_ID
+		AND ar.ADMIN_ID = a.ID
+		AND a.ORGANIZATION_ID = o.ID
+		AND r.ID = '1'
+        <if test="name!=null and name!=''">
+            AND a.NAME like  '%${name}%'
+        </if>
+
+    </select>
+
+
+</mapper>

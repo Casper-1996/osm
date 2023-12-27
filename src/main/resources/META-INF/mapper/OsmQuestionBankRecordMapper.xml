@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmQuestionBankRecordDao">
+
+    <sql id="All_Column_List">
+     ID, TITLE_NAME, TITLE_CONTENT, MODULE_TYPE, QUESTION_MARK, UPLOAD_FILE_NAME, SCOPE_APPLIACTION, QUESTION_TYPE, CORRECT_ANSWER,REFERENCE_ANSWER, INSERT_TIME, UPDATE_TIME, SCOPE_USER
+ </sql>
+
+    <sql id="selectRelation">
+        <if test="id != null and id != ''">
+            and ID = #{id}
+        </if>
+        <if test="titleName != null and titleName != ''">
+            and TITLE_NAME = #{titleName}
+        </if>
+        <if test="titleContent != null and titleContent != ''">
+            and TITLE_CONTENT = #{titleContent}
+        </if>
+        <if test="moduleType != null">
+            and MODULE_TYPE = #{moduleType}
+        </if>
+        <if test="questionMark != null">
+            and QUESTION_MARK = #{questionMark}
+        </if>
+        <if test="uploadFileName != null and uploadFileName != ''">
+            and UPLOAD_FILE_NAME = #{uploadFileName}
+        </if>
+        <if test="scopeAppliaction != null">
+            and SCOPE_APPLIACTION = #{scopeAppliaction}
+        </if>
+        <if test="questionType != null">
+            and QUESTION_TYPE = #{questionType}
+        </if>
+        <if test="correctAnswer != null">
+            and CORRECT_ANSWER = #{correctAnswer}
+        </if>
+        <if test="referenceAnswer != null">
+            and REFERENCE_ANSWER = #{referenceAnswer}
+        </if>
+        <if test="insertTime != null">
+            and INSERT_TIME = #{insertTime}
+        </if>
+        <if test="updateTime != null">
+            and UPDATE_TIME = #{updateTime}
+        </if>
+        <if test="scopeUsers!=null and scopeUsers.size()> 0">
+            and b.SCOPE_USER in
+            <foreach item="item" collection="scopeUsers" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+    <select id="findQuestionTypeNum" resultType="java.lang.Integer">
+        SELECT
+        COUNT(DISTINCT q.ID)
+        FROM
+        OSM.OSM_QUESTION_BANK_RECORD q,
+        OSM.OSM_SCOPE_USER s
+        WHERE
+        q.ID = s.BANK_RECORD_ID
+        <if test="scopeAppliaction != null">
+            and q.SCOPE_APPLIACTION = #{scopeAppliaction}
+        </if>
+        <if test="scopeUser != null">
+            and s.SCOPE_USER = #{scopeUser}
+        </if>
+        AND q.QUESTION_TYPE = #{questionType}
+    </select>
+    <select id="findModuleQuesNum" resultType="com.icbc.exam.entity.bo.QuestionTypeNum">
+
+        SELECT
+        COUNT( DISTINCT q.ID ) questionNum, q.QUESTION_TYPE questionType
+        FROM
+        OSM.OSM_QUESTION_BANK_RECORD q,
+        OSM.OSM_SCOPE_USER s
+        WHERE
+        q.ID = s.BANK_RECORD_ID
+        AND q.QUESTION_TYPE = #{questionType}
+        <if test="scopeAppliaction != null ">
+            and q.SCOPE_APPLIACTION = #{scopeAppliaction}
+        </if>
+        <if test="scopeUser != null">
+            and s.SCOPE_USER = #{scopeUser}
+        </if>
+        AND q.MODULE_TYPE = #{moduleType}
+         GROUP BY q.QUESTION_TYPE
+
+    </select>
+
+    <select id="noExistingQuestions" resultType="com.icbc.exam.entity.vo.OsmQuestionBankRecordResp">
+        SELECT
+        ID,
+        TITLE_NAME,
+        QUESTION_TYPE,
+        QUESTION_MARK,
+        SCOPE_APPLIACTION,
+        MODULE_TYPE,
+        UPDATE_TIME
+        FROM
+        OSM_QUESTION_BANK_RECORD
+        WHERE
+        QUESTION_TYPE != 4
+        <include refid="selectRelation"/>
+        ORDER BY UPDATE_TIME DESC
+    </select>
+
+    <select id="existingQuestions" resultType="com.icbc.exam.entity.vo.OsmQuestionBankRecordResp">
+        SELECT
+        a.ID,
+        a.TITLE_NAME,
+        a.QUESTION_TYPE,
+        a.QUESTION_MARK,
+        a.SCOPE_APPLIACTION,
+        wm_concat ( b.SCOPE_USER ) as SCOPE_USER,
+        a.MODULE_TYPE,
+        a.UPDATE_TIME
+        FROM
+        OSM_QUESTION_BANK_RECORD a,
+        OSM_SCOPE_USER b
+        WHERE
+        a.id = b.BANK_RECORD_ID
+        and a.QUESTION_TYPE != 4
+        <include refid="selectRelation"/>
+        GROUP BY
+        a.ID,
+        a.TITLE_NAME,
+        a.QUESTION_TYPE,
+        a.QUESTION_MARK,
+        a.SCOPE_APPLIACTION,
+        a.MODULE_TYPE,
+        a.UPDATE_TIME
+        ORDER BY a.UPDATE_TIME DESC
+    </select>
+    <select id="ccQuestions" resultType="com.icbc.exam.entity.vo.OsmQuestionBankRecordResp">
+        SELECT
+        ID,
+        TITLE_NAME,
+        TITLE_CONTENT
+        FROM
+        OSM_QUESTION_BANK_RECORD
+        WHERE
+        QUESTION_TYPE = 4
+        <if test="titleName != null and titleName != ''">
+            and TITLE_NAME = #{titleName}
+        </if>
+        ORDER BY UPDATE_TIME DESC
+    </select>
+</mapper>

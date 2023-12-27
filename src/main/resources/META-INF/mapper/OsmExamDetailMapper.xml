@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icbc.exam.dao.OsmExamDetailDao">
+
+    <sql id="All_Column_List">
+     REL_ID, EXAM_ID, QUESTION_ID, ANSWER, QUESTION_TYPE, SUBJECT_ANSWER, SCORE, FIRST_SUBJECT_SCORE1, FIRST_SUBJECT_SCORE2, USER_ID, SECOND_SUBJECT_SCORE1, SECOND_SUBJECT_SCORE2, THIRD_SUBJECT_SCORE1, THIRD_SUBJECT_SCORE2, FIRST_USER_ID, FIRST_TIME, SECOND_USER_ID, SECOND_TIME, THIRD_USER_ID, THIRD_TIME
+ </sql>
+
+    <sql id="selectRelation">
+        <if test="relId != null">
+            and REL_ID = #{relId}
+        </if>
+        <if test="examId != null and examId != ''">
+            and EXAM_ID = #{examId}
+        </if>
+        <if test="questionId != null and questionId != ''">
+            and QUESTION_ID = #{questionId}
+        </if>
+        <if test="answer != null and answer != ''">
+            and ANSWER = #{answer}
+        </if>
+        <if test="questionType != null">
+            and QUESTION_TYPE = #{questionType}
+        </if>
+        <if test="subjectAnswer != null and subjectAnswer != ''">
+            and SUBJECT_ANSWER = #{subjectAnswer}
+        </if>
+        <if test="score != null">
+            and SCORE = #{score}
+        </if>
+        <if test="firstSubjectScore1 != null">
+            and FIRST_SUBJECT_SCORE1 = #{firstSubjectScore1}
+        </if>
+        <if test="firstSubjectScore2 != null">
+            and FIRST_SUBJECT_SCORE2 = #{firstSubjectScore2}
+        </if>
+        <if test="userId != null and userId != ''">
+            and USER_ID = #{userId}
+        </if>
+        <if test="secondSubjectScore1 != null">
+            and SECOND_SUBJECT_SCORE1 = #{secondSubjectScore1}
+        </if>
+        <if test="secondSubjectScore2 != null">
+            and SECOND_SUBJECT_SCORE2 = #{secondSubjectScore2}
+        </if>
+        <if test="thirdSubjectScore1 != null">
+            and THIRD_SUBJECT_SCORE1 = #{thirdSubjectScore1}
+        </if>
+        <if test="thirdSubjectScore2 != null">
+            and THIRD_SUBJECT_SCORE2 = #{thirdSubjectScore2}
+        </if>
+        <if test="firstUserId != null and firstUserId != ''">
+            and FIRST_USER_ID = #{firstUserId}
+        </if>
+        <if test="firstTime != null">
+            and FIRST_TIME = #{firstTime}
+        </if>
+        <if test="secondUserId != null and secondUserId != ''">
+            and SECOND_USER_ID = #{secondUserId}
+        </if>
+        <if test="secondTime != null">
+            and SECOND_TIME = #{secondTime}
+        </if>
+        <if test="thirdUserId != null and thirdUserId != ''">
+            and THIRD_USER_ID = #{thirdUserId}
+        </if>
+        <if test="thirdTime != null">
+            and THIRD_TIME = #{thirdTime}
+        </if>
+    </sql>
+
+    <update id="judgePointRight">
+        UPDATE OSM_EXAM_DETAIL a set SCORE=#{judgePoint} where user_id=#{userId} and examId=#{examId}
+          and QUESTION_TYPE = 1
+          and exists (select 1 from OSM_EXAM_REL b where b.REL_ID=a.REL_ID and b.ANSWER_ID=a.ANSWER)
+    </update>
+
+    <update id="singlePointRight">
+        UPDATE OSM_EXAM_DETAIL a set SCORE=#{singlePoint} where user_id=#{userId} and examId=#{examId}
+          and QUESTION_TYPE = 2
+          and exists (select 1 from OSM_EXAM_REL b where b.REL_ID=a.REL_ID and b.ANSWER_ID=a.ANSWER)
+    </update>
+
+    <update id="multiplePointRight">
+        UPDATE OSM_EXAM_DETAIL a set SCORE=#{multiplePoint} where user_id=#{userId} and REL_ID=#{relId}
+          and QUESTION_TYPE = 3
+    </update>
+
+    <select id="getMultiples" resultType="com.icbc.exam.entity.po.OsmExamDetailModel">
+        select * from OSM_EXAM_DETAIL t where t.EXAM_ID=#{examId} and t.USER_ID=#{userId} and QUESTION_TYPE = 3
+    </select>
+
+
+</mapper>
